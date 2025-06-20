@@ -3,8 +3,6 @@ import {
   GCS_FILENAME_VAR,
   LOCAL_MASTER_PLAYLIST_NAME_VAR,
   LOCAL_PLAYLIST_NAME_VAR,
-  R2_ROOT_DIR_VAR,
-  R2_VIDEO_BUCKET_NAME_VAR,
   VIDEO_DIR_OPTIONAL_VAR,
 } from "./args";
 import { Processor } from "./processor";
@@ -17,8 +15,6 @@ async function main() {
     await Processor.create().run(
       loggingPrefix,
       process.env[GCS_FILENAME_VAR],
-      process.env[R2_ROOT_DIR_VAR],
-      process.env[R2_VIDEO_BUCKET_NAME_VAR],
       process.env[LOCAL_MASTER_PLAYLIST_NAME_VAR],
       process.env[LOCAL_PLAYLIST_NAME_VAR],
       process.env[VIDEO_DIR_OPTIONAL_VAR].split(","),

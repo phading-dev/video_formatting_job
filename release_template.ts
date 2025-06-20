@@ -1,3 +1,4 @@
+import { AUDIO_DIRS_VAR, GCS_FILENAME_VAR, LOCAL_MASTER_PLAYLIST_NAME_VAR, LOCAL_PLAYLIST_NAME_VAR, VIDEO_DIR_OPTIONAL_VAR } from "./args";
 import { ENV_VARS } from "./env_vars";
 import { writeFileSync } from "fs";
 
@@ -59,38 +60,54 @@ CMD ["node", "main_bin"]
 kind: Job
 metadata:
   name: ${ENV_VARS.releaseServiceName}
-  location: ${ENV_VARS.clusterRegion}
+  labels:
+    cloud.googleapis.com/location: ${ENV_VARS.clusterRegion}
 spec:
   template:
     spec:
       template:
         spec:
+          maxRetries: 1
+          timeoutSeconds: 3600
+          serviceAccountName: ${ENV_VARS.serviceAccount}@${ENV_VARS.projectId}.iam.gserviceaccount.com
           containers:
           - name: ${ENV_VARS.releaseServiceName}-container
-            image: gcr.io/your-project-id/${ENV_VARS.releaseServiceName}:latest
+            image: gcr.io/${ENV_VARS.projectId}/${ENV_VARS.releaseServiceName}:latest
             resources:
               limits:
-                cpu: ${ENV_VARS.cpuLimit}
-                memory: ${ENV_VARS.memoryLimit}
+                cpu: "${ENV_VARS.cpuLimit}"
+                memory: "${ENV_VARS.memoryLimit}"
             env:
-            - name: gcs_media_filename
+            - name: ${GCS_FILENAME_VAR}
               value: ""
-            - name: video_dir
+            - name: ${LOCAL_MASTER_PLAYLIST_NAME_VAR}
               value: ""
-            - name: audio_dirs
+            - name: ${LOCAL_PLAYLIST_NAME_VAR}
+              value: ""
+            - name: ${VIDEO_DIR_OPTIONAL_VAR}
+              value: ""
+            - name: ${AUDIO_DIRS_VAR}
               value: ""
             volumeMounts:
-            - name: gcs-volume
+            - name: gcs-input-volume
               mountPath: ${ENV_VARS.gcsVideoMountedLocalDir}
-              readOnly: true # Input bucket typically read-only
-          volumes: # Define the GCS volumes
-          - name: gcs-volume
-            gcs:
-              bucket: ${ENV_VARS.gcsVideoBucketName}
-          serviceAccountName: ${ENV_VARS.serviceAccount}@${ENV_VARS.projectId}.iam.gserviceaccount.com
-          taskCount: 1
-          maxRetries: 3
-          timeoutSeconds: 3600 # e.g., 1 hour
+              readOnly: true
+            - name: gcs-output-volume
+              mountPath: ${ENV_VARS.gcsVideoOutputMountedLocalDir}
+              readOnly: false
+          volumes:
+          - name: gcs-input-volume
+            csi:
+              driver: gcsfuse.run.googleapis.com
+              readOnly: true
+              volumeAttributes:
+                bucketName: ${ENV_VARS.gcsVideoBucketName}
+          - name: gcs-output-volume
+            csi:
+              driver: gcsfuse.run.googleapis.com
+              readOnly: false
+              volumeAttributes:
+                bucketName: ${ENV_VARS.gcsVideoOutputBucketName}
 `;
   writeFileSync(`${env}/service.yaml`, serviceTemplate);
 

@@ -3,6 +3,8 @@ import { CLUSTER_ENV_VARS, ClusterEnvVars } from "@phading/cluster/env_vars";
 export interface EnvVars extends ClusterEnvVars {
   gcsVideoBucketName?: string;
   gcsVideoMountedLocalDir?: string;
+  gcsVideoOutputBucketName?: string;
+  gcsVideoOutputMountedLocalDir?: string;
   releaseServiceName?: string;
   builderAccount?: string;
   serviceAccount?: string;

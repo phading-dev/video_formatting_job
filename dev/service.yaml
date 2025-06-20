@@ -2,35 +2,51 @@ apiVersion: run.googleapis.com/v1
 kind: Job
 metadata:
   name: video-formatting-job
-  location: us-central1
+  labels:
+    cloud.googleapis.com/location: us-central1
 spec:
   template:
     spec:
       template:
         spec:
+          maxRetries: 1
+          timeoutSeconds: 3600
+          serviceAccountName: video-formatting-account@phading-dev.iam.gserviceaccount.com
           containers:
           - name: video-formatting-job-container
-            image: gcr.io/your-project-id/video-formatting-job:latest
+            image: gcr.io/phading-dev/video-formatting-job:latest
             resources:
               limits:
-                cpu: 2
-                memory: 4Gi
+                cpu: "2"
+                memory: "4Gi"
             env:
-            - name: gcs_media_filename
+            - name: gcsFilename
               value: ""
-            - name: video_dir
+            - name: localMasterPlaylistName
               value: ""
-            - name: audio_dirs
+            - name: localPlaylistName
+              value: ""
+            - name: videoDirOptional
+              value: ""
+            - name: audioDirs
               value: ""
             volumeMounts:
-            - name: gcs-volume
+            - name: gcs-input-volume
               mountPath: /gcs_video
-              readOnly: true # Input bucket typically read-only
-          volumes: # Define the GCS volumes
-          - name: gcs-volume
-            gcs:
-              bucket: phading-dev-video
-          serviceAccountName: video-formatting-account@phading-dev.iam.gserviceaccount.com
-          taskCount: 1
-          maxRetries: 3
-          timeoutSeconds: 3600 # e.g., 1 hour
+              readOnly: true
+            - name: gcs-output-volume
+              mountPath: /gcs_video_output
+              readOnly: false
+          volumes:
+          - name: gcs-input-volume
+            csi:
+              driver: gcsfuse.run.googleapis.com
+              readOnly: true
+              volumeAttributes:
+                bucketName: phading-dev-video
+          - name: gcs-output-volume
+            csi:
+              driver: gcsfuse.run.googleapis.com
+              readOnly: false
+              volumeAttributes:
+                bucketName: phading-dev-video-output
