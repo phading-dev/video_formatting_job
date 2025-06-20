@@ -1,0 +1,36 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: video-formatting-job
+  location: us-central1
+spec:
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: video-formatting-job-container
+            image: gcr.io/your-project-id/video-formatting-job:latest
+            resources:
+              limits:
+                cpu: 2
+                memory: 4Gi
+            env:
+            - name: gcs_media_filename
+              value: ""
+            - name: video_dir
+              value: ""
+            - name: audio_dirs
+              value: ""
+            volumeMounts:
+            - name: gcs-volume
+              mountPath: /gcs_video
+              readOnly: true # Input bucket typically read-only
+          volumes: # Define the GCS volumes
+          - name: gcs-volume
+            gcs:
+              bucket: phading-dev-video
+          serviceAccountName: video-formatting-account@phading-dev.iam.gserviceaccount.com
+          taskCount: 1
+          maxRetries: 3
+          timeoutSeconds: 3600 # e.g., 1 hour
